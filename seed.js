@@ -134,49 +134,65 @@ async function fetchJikanPictures(malId) {
   }
 }
 
-async function fetchYoutubeVideo(characterName, seriesName) {
-  if (!YOUTUBE_API_KEY) {
-    // 1. Check curated list first
-    for (const key of Object.keys(CURATED_VIDEOS)) {
-      if (characterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(characterName.toLowerCase())) {
-        return CURATED_VIDEOS[key];
+async function searchYoutubeWithoutKey(query) {
+  try {
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
       }
+    });
+    if (!response.ok) return null;
+    const html = await response.text();
+    const match = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
+    if (match && match[1]) {
+      return match[1];
     }
-    // 2. Fetch anime trailer from Jikan search by anime name
+  } catch (error) {
+    console.error("Error scraping YouTube search:", error.message);
+  }
+  return null;
+}
+
+async function fetchYoutubeVideo(characterName, seriesName) {
+  // 1. Try to search YouTube keyless for character specific moments first!
+  try {
+    console.log(`Searching YouTube keyless for character showcase: ${characterName} (${seriesName})`);
+    const query = `${characterName} ${seriesName} showcase moments compilation`;
+    const videoId = await searchYoutubeWithoutKey(query);
+    if (videoId) {
+      console.log(`  Found character video ID: ${videoId}`);
+      return videoId;
+    }
+  } catch (err) {
+    console.error(`Keyless YouTube search failed for ${characterName}:`, err.message);
+  }
+
+  // 2. Fallback to API Key search if configured
+  if (YOUTUBE_API_KEY) {
     try {
-      console.log(`Searching Jikan for trailer of series: ${seriesName}`);
-      const url = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(seriesName)}&limit=1`;
+      const query = `${characterName} ${seriesName} moments compilation`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}&maxResults=1`;
       const response = await fetch(url);
       if (response.ok) {
         const result = await response.json();
-        if (result.data && result.data.length > 0 && result.data[0].trailer && result.data[0].trailer.youtube_id) {
-          console.log(`  Found Jikan trailer ID: ${result.data[0].trailer.youtube_id}`);
-          return result.data[0].trailer.youtube_id;
+        if (result.items && result.items.length > 0) {
+          return result.items[0].id.videoId;
         }
       }
-    } catch (e) {
-      console.error(`Failed to fetch Jikan trailer for ${seriesName}:`, e.message);
+    } catch (error) {
+      console.error("YouTube API search failed:", error.message);
     }
-    return DEFAULT_VIDEO_ID;
   }
 
-  try {
-    const query = `${characterName} ${seriesName} official trailer`;
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}&maxResults=1`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.warn(`YouTube API returned status ${response.status}. Using fallback video ID.`);
-      return DEFAULT_VIDEO_ID;
+  // 3. Fallback to curated list
+  for (const key of Object.keys(CURATED_VIDEOS)) {
+    if (characterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(characterName.toLowerCase())) {
+      return CURATED_VIDEOS[key];
     }
-    const result = await response.json();
-    if (result.items && result.items.length > 0) {
-      return result.items[0].id.videoId;
-    }
-    return DEFAULT_VIDEO_ID;
-  } catch (error) {
-    console.error(`Error searching YouTube for ${characterName}:`, error.message);
-    return DEFAULT_VIDEO_ID;
   }
+
+  return DEFAULT_VIDEO_ID;
 }
 
 async function seed() {
@@ -250,20 +266,23 @@ async function seed() {
         console.log("  No MAL match found.");
       }
 
-      // Resolve YouTube Video ID (prefer AniList trailer, fallback to curated/Jikan lookup)
-      let videoId = null;
-      if (char.media && char.media.nodes) {
-        for (const node of char.media.nodes) {
-          if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
-            videoId = node.trailer.id;
-            break;
+      // Resolve YouTube Video ID (prefer character showcase compilation, fallback to AniList trailer)
+      let videoId = await fetchYoutubeVideo(name, series);
+
+      if (!videoId || videoId === DEFAULT_VIDEO_ID) {
+        console.log(`- Character moments failed/defaulted, looking up AniList trailer for ${name}...`);
+        if (char.media && char.media.nodes) {
+          for (const node of char.media.nodes) {
+            if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
+              videoId = node.trailer.id;
+              break;
+            }
           }
         }
       }
 
       if (!videoId) {
-        console.log(`- Fetching YouTube video fallback for ${name}...`);
-        videoId = await fetchYoutubeVideo(name, series);
+        videoId = DEFAULT_VIDEO_ID;
       }
       characterData.videoId = videoId;
       console.log(`  Associated Video ID: ${videoId}`);
