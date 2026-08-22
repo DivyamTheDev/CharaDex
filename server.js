@@ -277,9 +277,9 @@ app.get("/api/characters/:id", async (req, res) => {
       return res.status(404).json({ error: "Character not found" });
     }
 
-    // Auto-repair missing videoId for cached or legacy records
-    if (!character.videoId) {
-      console.log(`Auto-repairing missing videoId for: ${character.name}`);
+    // Auto-repair missing or incorrect legacy default videoId for cached records
+    if (!character.videoId || character.videoId === "S8_YwFLCh4U") {
+      console.log(`Auto-repairing missing/default videoId for: ${character.name}`);
       const videoId = await fetchYoutubeVideo(character.name, character.series);
       const updated = await db.findOneAndUpdate(
         { "sources.anilistId": character.sources.anilistId },
