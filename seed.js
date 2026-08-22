@@ -61,6 +61,10 @@ async function fetchFromAniList() {
                 romaji
                 userPreferred
               }
+              trailer {
+                id
+                site
+              }
             }
           }
         }
@@ -246,9 +250,21 @@ async function seed() {
         console.log("  No MAL match found.");
       }
 
-      // Fetch YouTube Video ID
-      console.log(`- Fetching YouTube video for ${name}...`);
-      const videoId = await fetchYoutubeVideo(name, series);
+      // Resolve YouTube Video ID (prefer AniList trailer, fallback to curated/Jikan lookup)
+      let videoId = null;
+      if (char.media && char.media.nodes) {
+        for (const node of char.media.nodes) {
+          if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
+            videoId = node.trailer.id;
+            break;
+          }
+        }
+      }
+
+      if (!videoId) {
+        console.log(`- Fetching YouTube video fallback for ${name}...`);
+        videoId = await fetchYoutubeVideo(name, series);
+      }
       characterData.videoId = videoId;
       console.log(`  Associated Video ID: ${videoId}`);
 

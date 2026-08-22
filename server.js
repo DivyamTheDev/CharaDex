@@ -100,6 +100,10 @@ async function fetchAndCacheFromAniList(searchQuery) {
                   romaji
                   userPreferred
                 }
+                trailer {
+                  id
+                  site
+                }
               }
             }
           }
@@ -139,7 +143,21 @@ async function fetchAndCacheFromAniList(searchQuery) {
         }
       }
 
-      const videoId = await fetchYoutubeVideo(name, series);
+      // Resolve YouTube Video ID (prefer AniList trailer, fallback to curated/Jikan lookup)
+      let videoId = null;
+      if (char.media && char.media.nodes) {
+        for (const node of char.media.nodes) {
+          if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
+            videoId = node.trailer.id;
+            break;
+          }
+        }
+      }
+
+      if (!videoId) {
+        console.log(`- Fetching YouTube video fallback for ${name}...`);
+        videoId = await fetchYoutubeVideo(name, series);
+      }
 
       const characterData = {
         name,
@@ -166,6 +184,51 @@ async function fetchAndCacheFromAniList(searchQuery) {
   } catch (error) {
     console.error("Error in hybrid search & cache:", error.message);
   }
+}
+
+async function fetchAniListTrailer(anilistId) {
+  try {
+    const query = `
+      query ($id: Int) {
+        Character (id: $id) {
+          media (type: ANIME, sort: POPULARITY_DESC) {
+            nodes {
+              trailer {
+                id
+                site
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = { id: parseInt(anilistId) };
+
+    const response = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      const nodes = result.data?.Character?.media?.nodes;
+      if (nodes) {
+        for (const node of nodes) {
+          if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
+            return node.trailer.id;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch AniList trailer by ID:", error.message);
+  }
+  return null;
 }
 
 const app = express();
@@ -280,7 +343,14 @@ app.get("/api/characters/:id", async (req, res) => {
     // Auto-repair missing or incorrect legacy default videoId for cached records
     if (!character.videoId || character.videoId === "S8_YwFLCh4U") {
       console.log(`Auto-repairing missing/default videoId for: ${character.name}`);
-      const videoId = await fetchYoutubeVideo(character.name, character.series);
+      
+      let videoId = await fetchAniListTrailer(character.sources.anilistId);
+      
+      if (!videoId) {
+        console.log(`- AniList trailer not found, falling back to YouTube/Jikan search for ${character.name}`);
+        videoId = await fetchYoutubeVideo(character.name, character.series);
+      }
+
       const updated = await db.findOneAndUpdate(
         { "sources.anilistId": character.sources.anilistId },
         { videoId },
