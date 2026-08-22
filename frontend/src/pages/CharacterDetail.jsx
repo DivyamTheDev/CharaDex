@@ -208,7 +208,7 @@ export default function CharacterDetail() {
               </h2>
               <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-700 shadow-xl bg-slate-950">
                 <iframe
-                  src={`https://www.youtube.com/embed/${character.videoId}`}
+                  src={`https://www.youtube.com/embed/${character.videoId}?autoplay=1&mute=0`}
                   title={`${character.name} Highlight video`}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

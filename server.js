@@ -37,10 +37,26 @@ const DEFAULT_VIDEO_ID = "S8_YwFLCh4U";
 async function fetchYoutubeVideo(characterName, seriesName) {
   const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
   if (!YOUTUBE_API_KEY) {
+    // 1. Check curated list first
     for (const key of Object.keys(CURATED_VIDEOS)) {
       if (characterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(characterName.toLowerCase())) {
         return CURATED_VIDEOS[key];
       }
+    }
+    // 2. Fetch anime trailer from Jikan search by anime name
+    try {
+      console.log(`Searching Jikan for trailer of series: ${seriesName}`);
+      const url = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(seriesName)}&limit=1`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && result.data.length > 0 && result.data[0].trailer && result.data[0].trailer.youtube_id) {
+          console.log(`  Found Jikan trailer ID: ${result.data[0].trailer.youtube_id}`);
+          return result.data[0].trailer.youtube_id;
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to fetch Jikan trailer for ${seriesName}:`, e.message);
     }
     return DEFAULT_VIDEO_ID;
   }
