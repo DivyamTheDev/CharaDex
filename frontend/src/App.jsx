@@ -10,18 +10,24 @@ export default function App() {
     return !sessionStorage.getItem("charaDexIntroPlayed");
   });
   const [fadeIntro, setFadeIntro] = useState(false);
+  const videoRef = React.useRef(null);
 
   useEffect(() => {
     if (showIntro) {
-      // Start fading out slightly before removing the overlay
+      // Slow down playback rate to 55% speed (more cinematic)
+      if (videoRef.current) {
+        videoRef.current.playbackRate = 0.55;
+      }
+
+      // Start fading out slightly before removing the overlay (4 seconds total)
       const fadeTimer = setTimeout(() => {
         setFadeIntro(true);
-      }, 1600);
+      }, 3400);
 
       const removeTimer = setTimeout(() => {
         setShowIntro(false);
         sessionStorage.setItem("charaDexIntroPlayed", "true");
-      }, 2100);
+      }, 4000);
 
       return () => {
         clearTimeout(fadeTimer);
@@ -36,16 +42,23 @@ export default function App() {
         {/* Intro Opener Overlay */}
         {showIntro && (
           <div
-            className={`fixed inset-0 z-[9999] flex items-center justify-center bg-[#0b0717] transition-opacity duration-500 ease-out ${
+            className={`fixed inset-0 z-[9999] flex items-center justify-center bg-[#0b0717] transition-opacity duration-500 ease-out overflow-hidden ${
               fadeIntro ? "opacity-0 pointer-events-none" : "opacity-100"
             }`}
           >
             <video
+              ref={videoRef}
               src="/intro.mp4"
               autoPlay
               muted
               playsInline
-              className="w-full h-full object-cover"
+              className="absolute object-cover"
+              style={{
+                width: "100vh",
+                height: "100vw",
+                transform: "rotate(90deg)",
+                transformOrigin: "center"
+              }}
             />
           </div>
         )}

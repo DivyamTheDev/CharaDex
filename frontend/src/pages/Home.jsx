@@ -129,9 +129,16 @@ export default function Home() {
               muted
               loop
               playsInline
-              className="w-full h-full object-cover opacity-25"
+              className="absolute object-cover"
+              style={{
+                width: "100%",
+                height: "100%",
+                transform: "rotate(90deg) scale(1.8)",
+                transformOrigin: "center",
+                opacity: 0.45
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#110d29]/80 via-[#0b0717]/90 to-[#0b0717]/70" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#110d29]/75 via-[#0b0717]/85 to-[#0b0717]/65" />
           </div>
 
           <div className="space-y-6 max-w-2xl text-center md:text-left z-10">
