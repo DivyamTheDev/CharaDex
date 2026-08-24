@@ -69,16 +69,20 @@ export default function GenderTab() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-5 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-purple-500/10 pb-5 gap-4">
         <div className="flex items-center space-x-3">
-          <div className={`p-2.5 rounded-xl ${gender === "male" ? "bg-sky-500/10 text-sky-400" : "bg-pink-500/10 text-pink-400"}`}>
+          <div className={`p-2.5 rounded-xl border ${
+            gender === "male" 
+              ? "bg-sky-500/10 text-sky-400 border-sky-500/20 shadow-[0_0_10px_rgba(14,165,233,0.15)]" 
+              : "bg-pink-500/10 text-pink-400 border-pink-500/20 shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+          }`}>
             <User className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-100 m-0 leading-none">
+            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-purple-300 to-pink-300 m-0 leading-none">
               {genderTitle} Characters
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-xs font-semibold text-slate-400 mt-1.5">
               Browse and discover popular {gender} characters
             </p>
           </div>
@@ -86,7 +90,7 @@ export default function GenderTab() {
 
         {/* Filter dropdown */}
         <div className="flex items-center space-x-3">
-          <label className="text-xs font-semibold text-slate-400 hidden sm:inline">
+          <label className="text-xs font-bold text-slate-400 hidden sm:inline uppercase tracking-wider">
             FILTER BY SERIES
           </label>
           <select
@@ -95,7 +99,7 @@ export default function GenderTab() {
               setSelectedSeries(e.target.value);
               setPage(1);
             }}
-            className="bg-slate-800 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer w-full sm:w-auto"
+            className="bg-[#130d22]/70 text-slate-200 border border-purple-500/20 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 cursor-pointer w-full sm:w-auto"
           >
             <option value="">All Anime Series</option>
             {seriesList.map((series) => (

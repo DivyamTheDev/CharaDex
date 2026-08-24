@@ -120,13 +120,13 @@ export default function Home() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 pb-24">
       {/* Hero Header Section */}
       {!searchVal && (
-        <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 p-8 sm:p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-transparent pointer-events-none" />
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1b1437]/40 via-[#100b26]/60 to-[#0b0717] border border-purple-500/10 p-8 sm:p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl neon-glow-purple transition-all duration-500">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/5 to-transparent pointer-events-none" />
           <div className="space-y-6 max-w-2xl text-center md:text-left z-10">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-100 leading-tight">
-              Discover Your Favorite <span className="text-indigo-400">Anime Characters</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-100 leading-none tracking-tight">
+              Discover Your Favorite <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-brand-cyan">Anime Characters</span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-400 leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-lg">
               Explore databases, character profiles, image galleries, and trending moments from the most popular anime of all time.
             </p>
             {/* Inline search */}
@@ -136,11 +136,11 @@ export default function Home() {
                 placeholder="Search Luffy, Gojo, Levi..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                className="flex-grow bg-slate-800/80 border border-slate-700 rounded-xl px-5 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm backdrop-blur"
+                className="flex-grow bg-[#130d22]/90 border border-purple-500/20 rounded-xl px-5 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm backdrop-blur"
               />
               <button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center space-x-2 shrink-0 shadow-lg shadow-indigo-600/20"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold px-6 py-3.5 rounded-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 shrink-0 shadow-lg shadow-purple-600/20"
               >
                 <span>Search Now</span>
                 <ArrowRight className="h-4 w-4" />
@@ -148,8 +148,8 @@ export default function Home() {
             </form>
           </div>
           <div className="hidden md:flex items-center justify-center shrink-0 w-80 h-80 relative">
-            <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
-            <Sparkles className="h-40 w-40 text-indigo-400 animate-bounce" />
+            <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+            <Sparkles className="h-40 w-40 text-purple-400 animate-pulse drop-shadow-[0_0_20px_rgba(139,92,246,0.35)]" />
           </div>
         </div>
       )}
@@ -157,24 +157,24 @@ export default function Home() {
       {/* SEARCH OR CATEGORY FILTER RESULTS VIEW */}
       {searchVal || categoryVal ? (
         <div className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-purple-500/10 pb-4 gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-100 flex items-center space-x-2">
+              <h2 className="text-2xl font-black text-slate-100 flex items-center space-x-2">
                 {searchVal ? (
                   <>
                     <span>Search Results for</span>
-                    <span className="text-indigo-400">"{searchVal}"</span>
+                    <span className="text-purple-400">"{searchVal}"</span>
                   </>
                 ) : (
                   <>
                     <span>Category:</span>
-                    <span className="text-indigo-400">
+                    <span className="text-purple-400">
                       {categoryVal === "top" ? "Top Characters" : "Fan Favorites"}
                     </span>
                   </>
                 )}
               </h2>
-              <p className="text-sm text-slate-400 mt-1">
+              <p className="text-xs font-semibold text-slate-400 mt-1.5">
                 Showing matching character profiles
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function Home() {
               <select
                 value={selectedSeries}
                 onChange={(e) => setSelectedSeries(e.target.value)}
-                className="bg-slate-800 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                className="bg-[#130d22]/70 text-slate-200 border border-purple-500/20 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 cursor-pointer"
               >
                 <option value="">All Anime Series</option>
                 {seriesList.map((series) => (
@@ -196,7 +196,7 @@ export default function Home() {
 
               <button
                 onClick={clearSearch}
-                className="text-xs bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2.5 rounded-xl transition"
+                className="text-xs bg-[#130d22]/70 border border-purple-500/20 hover:bg-[#1a122e] text-slate-300 font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"
               >
                 Clear Search
               </button>
@@ -215,21 +215,21 @@ export default function Home() {
         <div className="space-y-16">
           {/* Top Characters Row */}
           <section className="space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="flex items-center justify-between border-b border-purple-500/10 pb-3">
               <div className="flex items-center space-x-2.5">
-                <Trophy className="h-6 w-6 text-yellow-500" />
-                <h2 className="text-2xl font-extrabold text-slate-100">Top Characters</h2>
+                <Trophy className="h-6 w-6 text-yellow-500 filter drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
+                <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-purple-300">Top Characters</h2>
               </div>
-              <Link to="/?category=top" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
+              <Link to="/?category=top" className="text-xs font-bold uppercase tracking-wider text-purple-400 hover:text-purple-300 flex items-center space-x-1">
                 <span>View More</span>
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight className="h-3 w-3 text-purple-400" />
               </Link>
             </div>
 
             {isLoadingTop ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-slate-800 rounded-xl h-[420px]" />
+                  <div key={i} className="bg-purple-950/20 rounded-2xl h-[420px] border border-purple-500/5" />
                 ))}
               </div>
             ) : (
@@ -246,21 +246,21 @@ export default function Home() {
 
           {/* Fan Favorites Row */}
           <section className="space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="flex items-center justify-between border-b border-purple-500/10 pb-3">
               <div className="flex items-center space-x-2.5">
-                <Heart className="h-6 w-6 text-pink-500 fill-pink-500" />
-                <h2 className="text-2xl font-extrabold text-slate-100">Fan Favorites</h2>
+                <Heart className="h-6 w-6 text-pink-500 fill-pink-500 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]" />
+                <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-pink-300">Fan Favorites</h2>
               </div>
-              <Link to="/?category=favorite" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
+              <Link to="/?category=favorite" className="text-xs font-bold uppercase tracking-wider text-pink-400 hover:text-pink-300 flex items-center space-x-1">
                 <span>View More</span>
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight className="h-3 w-3 text-pink-400" />
               </Link>
             </div>
 
             {isLoadingFav ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-slate-800 rounded-xl h-[420px]" />
+                  <div key={i} className="bg-purple-950/20 rounded-2xl h-[420px] border border-purple-500/5" />
                 ))}
               </div>
             ) : (

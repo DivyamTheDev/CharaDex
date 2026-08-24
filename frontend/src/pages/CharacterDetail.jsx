@@ -110,11 +110,11 @@ export default function CharacterDetail() {
         {/* Left Side: Images Gallery (Cols: 5) */}
         <div className="lg:col-span-5 space-y-4">
           {/* Main Display Image */}
-          <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-slate-900 border border-slate-700/80 shadow-2xl relative">
+          <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-[#161124] border border-purple-500/25 shadow-2xl relative neon-glow-purple transition-all duration-300">
             <img
               src={activeImage}
               alt={character.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover animate-fade-in"
             />
           </div>
 
@@ -125,8 +125,8 @@ export default function CharacterDetail() {
                 <button
                   key={i}
                   onClick={() => setActiveImage(img)}
-                  className={`relative shrink-0 w-16 h-20 sm:w-20 sm:h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                    activeImage === img ? "border-indigo-500 scale-95" : "border-slate-700 hover:border-slate-500"
+                  className={`relative shrink-0 w-16 h-20 sm:w-20 sm:h-24 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                    activeImage === img ? "border-purple-500 scale-95 shadow-[0_0_10px_rgba(139,92,246,0.5)]" : "border-purple-500/10 hover:border-purple-500/30"
                   }`}
                 >
                   <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
@@ -141,48 +141,48 @@ export default function CharacterDetail() {
           {/* Character Header */}
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <span className={`text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full border ${
+              <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
                 character.gender === "male" 
-                  ? "bg-sky-500/10 text-sky-400 border-sky-500/25" 
-                  : "bg-pink-500/10 text-pink-400 border-pink-500/25"
+                  ? "bg-sky-500/10 text-sky-400 border-sky-500/25 shadow-sm shadow-sky-500/5" 
+                  : "bg-pink-500/10 text-pink-400 border-pink-500/25 shadow-sm shadow-pink-500/5"
               }`}>
                 {character.gender}
               </span>
               {character.isTopCharacter && (
-                <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 text-xs font-bold tracking-wider px-3 py-1 rounded-full flex items-center space-x-1">
-                  <Sparkles className="h-3 w-3" />
+                <span className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border border-yellow-300/30 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full flex items-center space-x-1 shadow-lg shadow-yellow-500/5">
+                  <Sparkles className="h-3 w-3 fill-slate-950" />
                   <span>Top Star</span>
                 </span>
               )}
               {character.isFanFavorite && (
-                <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/25 text-xs font-bold tracking-wider px-3 py-1 rounded-full flex items-center space-x-1">
-                  <Heart className="h-3 w-3 fill-indigo-400" />
-                  <span>Fan Favorite</span>
+                <span className="bg-gradient-to-r from-pink-500 to-purple-500 text-white border border-pink-400/30 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full flex items-center space-x-1 shadow-lg shadow-pink-500/5">
+                  <Heart className="h-3 w-3 fill-white" />
+                  <span>Favorite</span>
                 </span>
               )}
             </div>
 
-            <h1 className="text-4xl sm:text-5xl font-black text-slate-100 mt-1">
+            <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-purple-300 to-pink-300 mt-1 tracking-tight">
               {character.name}
             </h1>
             
             <div className="flex items-center space-x-2 text-slate-400 text-lg">
-              <Tv className="h-5 w-5 text-indigo-400 shrink-0" />
+              <Tv className="h-5 w-5 text-purple-400 shrink-0" />
               <span className="font-semibold">{character.series}</span>
             </div>
           </div>
 
           {/* Quick Stats Panel */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl">
-            <div className="text-center p-3 border-r border-slate-700/60">
-              <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">Popularity Score</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 glass-panel p-5 rounded-2xl border border-purple-500/10 shadow-lg shadow-purple-950/20">
+            <div className="text-center p-3 border-r border-purple-500/10">
+              <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Popularity Score</div>
               <div className="text-2xl font-black text-yellow-400 mt-1">
                 {character.popularity.toLocaleString()}
               </div>
             </div>
             
-            <div className="text-center p-3 border-r border-slate-700/60">
-              <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">Source</div>
+            <div className="text-center p-3 border-r border-purple-500/10">
+              <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Source</div>
               <div className="text-sm font-bold text-slate-200 mt-2 truncate">
                 {character.sources.anilistId ? "AniList" : ""}
                 {character.sources.anilistId && character.sources.malId ? " + " : ""}
@@ -191,9 +191,9 @@ export default function CharacterDetail() {
             </div>
 
             <div className="text-center col-span-2 sm:col-span-1 p-3">
-              <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">Added</div>
-              <div className="text-sm font-semibold text-slate-200 mt-2 flex items-center justify-center space-x-1.5">
-                <Calendar className="h-4 w-4 text-slate-400" />
+              <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Added</div>
+              <div className="text-sm font-bold text-slate-200 mt-2 flex items-center justify-center space-x-1.5">
+                <Calendar className="h-4 w-4 text-purple-400" />
                 <span>{new Date(character.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -203,10 +203,10 @@ export default function CharacterDetail() {
           {character.videoId && (
             <div className="space-y-3">
               <h2 className="text-xl font-extrabold text-slate-100 flex items-center space-x-2">
-                <Youtube className="h-5 w-5 text-red-500 fill-red-500" />
+                <Youtube className="h-5 w-5 text-red-500 fill-red-500 filter drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
                 <span>Character Spotlight Video</span>
               </h2>
-              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-slate-700 shadow-xl bg-slate-950">
+              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-purple-500/20 shadow-2xl bg-slate-950 neon-glow-purple">
                 <iframe
                   src={`https://www.youtube.com/embed/${character.videoId}?autoplay=1&mute=0`}
                   title={`${character.name} Highlight video`}
@@ -222,7 +222,7 @@ export default function CharacterDetail() {
           {/* Biography Section */}
           <div className="space-y-3">
             <h2 className="text-xl font-extrabold text-slate-100">Biography</h2>
-            <div className="bg-slate-800/30 border border-slate-700/30 p-6 rounded-2xl">
+            <div className="glass-panel p-6 rounded-2xl border border-purple-500/10 shadow-lg shadow-purple-950/20">
               {renderBio(character.bio)}
             </div>
           </div>
