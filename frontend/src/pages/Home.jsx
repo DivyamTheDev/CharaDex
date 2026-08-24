@@ -120,8 +120,20 @@ export default function Home() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 pb-24">
       {/* Hero Header Section */}
       {!searchVal && (
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1b1437]/40 via-[#100b26]/60 to-[#0b0717] border border-purple-500/10 p-8 sm:p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl neon-glow-purple transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/5 to-transparent pointer-events-none" />
+        <div className="relative rounded-3xl overflow-hidden border border-purple-500/10 p-8 sm:p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl neon-glow-purple transition-all duration-500">
+          {/* Looping Background Video */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <video
+              src="/homepage_bg.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover opacity-25"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#110d29]/80 via-[#0b0717]/90 to-[#0b0717]/70" />
+          </div>
+
           <div className="space-y-6 max-w-2xl text-center md:text-left z-10">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-100 leading-none tracking-tight">
               Discover Your Favorite <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-brand-cyan">Anime Characters</span>
