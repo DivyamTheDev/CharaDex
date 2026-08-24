@@ -14,20 +14,20 @@ export default function App() {
 
   useEffect(() => {
     if (showIntro) {
-      // Slow down playback rate to 55% speed (more cinematic)
+      // Slow down playback rate to 50% speed (cinematic half speed)
       if (videoRef.current) {
-        videoRef.current.playbackRate = 0.55;
+        videoRef.current.playbackRate = 0.5;
       }
 
-      // Start fading out slightly before removing the overlay (4 seconds total)
+      // Start fading out slightly before removing the overlay (3.5 seconds total, cutting exactly before 2s of video)
       const fadeTimer = setTimeout(() => {
         setFadeIntro(true);
-      }, 3400);
+      }, 3000);
 
       const removeTimer = setTimeout(() => {
         setShowIntro(false);
         sessionStorage.setItem("charaDexIntroPlayed", "true");
-      }, 4000);
+      }, 3500);
 
       return () => {
         clearTimeout(fadeTimer);
@@ -56,7 +56,7 @@ export default function App() {
               style={{
                 width: "100vh",
                 height: "100vw",
-                transform: "rotate(90deg)",
+                transform: "rotate(270deg)",
                 transformOrigin: "center"
               }}
             />

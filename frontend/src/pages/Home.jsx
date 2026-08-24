@@ -133,12 +133,12 @@ export default function Home() {
               style={{
                 width: "100%",
                 height: "100%",
-                transform: "rotate(90deg) scale(1.8)",
+                transform: "rotate(270deg) scale(1.8)",
                 transformOrigin: "center",
-                opacity: 0.45
+                opacity: 0.6
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#110d29]/75 via-[#0b0717]/85 to-[#0b0717]/65" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#110d29]/65 via-[#0b0717]/80 to-[#0b0717]/60" />
           </div>
 
           <div className="space-y-6 max-w-2xl text-center md:text-left z-10">
