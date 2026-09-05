@@ -61,16 +61,15 @@ export default function App() {
               onLoadedMetadata={handleVideoLoaded}
               onTimeUpdate={handleTimeUpdate}
               onEnded={dismissIntro}
-              className="absolute object-cover pointer-events-none"
+              className="absolute pointer-events-none"
               style={{
                 top: "50%",
                 left: "50%",
-                width: "120vmax",
-                height: "120vmax",
-                minWidth: "100vw",
-                minHeight: "100vh",
+                width: "min(96vh, 54vw)",
+                height: "min(96vw, 170.67vh)",
                 transform: "translate(-50%, -50%) rotate(270deg)",
-                transformOrigin: "center"
+                transformOrigin: "center",
+                objectFit: "contain"
               }}
             />
             {/* Skip Option */}
