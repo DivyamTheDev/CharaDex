@@ -97,9 +97,10 @@ export default function App() {
         </main>
 
         {/* Global Footer */}
-        <footer className="bg-[#0b0717] border-t border-purple-500/10 text-slate-600 py-6 text-center text-xs">
+        <footer className="bg-[#0b0717] border-t border-purple-500/10 text-slate-500 py-6 text-center text-xs space-y-1">
           <div className="max-w-7xl mx-auto px-4">
-            <p>© {new Date().getFullYear()} CHARADEX Anime Database. Built with React, Tailwind v4, Express & MongoDB.</p>
+            <p>© {new Date().getFullYear()} <span className="font-bold text-slate-300">CHARADEX</span> Anime Database. Built with React, Tailwind v4, Express & MongoDB.</p>
+            <p className="text-slate-400 font-medium mt-1">Built by <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 font-bold">Divyam</span></p>
           </div>
         </footer>
       </div>

@@ -5,16 +5,19 @@ const cors = require("cors");
 
 const db = require("./db");
 
-// Curated YouTube Video IDs for top anime characters to use as high-quality fallbacks
+// Curated YouTube Video IDs for top anime characters to ensure 100% accurate match
 const CURATED_VIDEOS = {
+  "Megumin": "O69V33xgo1o",
+  "Kyoujurou Rengoku": "EF90I874qns",
+  "Rengoku": "EF90I874qns",
   "Satoru Gojo": "M25zXPxF8HY",
   "Gojou": "M25zXPxF8HY",
   "Levi": "SP7T5bU5hUY",
   "Eren": "SP7T5bU5hUY",
   "Mikasa": "SP7T5bU5hUY",
   "Lelouch": "v-AGjx0N3y4",
-  "Luffy": "S8_YwFLCh4U",
-  "Zoro": "S8_YwFLCh4U",
+  "Luffy": "e46Js3PoHaI",
+  "Zoro": "4TO0ccO4sh0",
   "Naruto": "QczGoHcXtOc",
   "Kakashi": "QczGoHcXtOc",
   "Itachi": "QczGoHcXtOc",
@@ -29,13 +32,26 @@ const CURATED_VIDEOS = {
   "Makima": "v4yJOo_39DY",
   "Thorfinn": "f8JrG4K23y8",
   "Reigen": "191Z41Xv_xQ",
-  "Mai Sakurajima": "8Ovxv614b8U"
+  "Mai Sakurajima": "8Ovxv614b8U",
+  "Frieren": "lJ2Ao1suBSw",
+  "Maomao": "uXv5TlA1hf4",
+  "Nezuko": "ZjR-GKLZsS4",
+  "Nadeko": "msEvh5R43e0",
+  "Hinata Hyuuga": "ckl__ZiyHJk",
+  "Fubuki": "zLq0i4U6V94",
+  "Nanami": "o4WjO0y6Q_s",
+  "Asuka": "7r4kF9u6G8M",
+  "Rei Ayanami": "1R8z_jTqk-E",
+  "Marin Kitagawa": "R90ZYSgUSdI",
+  "Rem": "UzGULFTBrKg",
+  "Chika Fujiwara": "R2vKdZCsJwY"
 };
 
 const DEFAULT_VIDEO_ID = "S8_YwFLCh4U";
 
-async function searchYoutubeWithoutKey(query) {
+async function searchYoutubeWithoutKey(characterName, seriesName) {
   try {
+    const query = `${characterName} ${seriesName} moments`;
     const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
     const response = await fetch(url, {
       headers: {
@@ -44,9 +60,27 @@ async function searchYoutubeWithoutKey(query) {
     });
     if (!response.ok) return null;
     const html = await response.text();
-    const match = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
-    if (match && match[1]) {
-      return match[1];
+    const jsonMatch = html.match(/ytInitialData\s*=\s*({.+?});<\/script>/);
+    if (!jsonMatch) return null;
+
+    const data = JSON.parse(jsonMatch[1]);
+    const sections = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+    const charParts = characterName.toLowerCase().split(/\s+/).filter(p => p.length > 2);
+
+    for (const section of sections) {
+      const items = section.itemSectionRenderer?.contents || [];
+      for (const item of items) {
+        const v = item.videoRenderer;
+        if (!v || !v.videoId) continue;
+        const title = (v.title?.runs?.map(r => r.text).join("") || v.title?.simpleText || "").toLowerCase();
+        
+        // Strict verification: title MUST mention the character
+        const matchesChar = charParts.some(part => title.includes(part));
+        if (matchesChar) {
+          console.log(`  Found verified character video: "${title}" (${v.videoId})`);
+          return v.videoId;
+        }
+      }
     }
   } catch (error) {
     console.error("Error scraping YouTube search:", error.message);
@@ -55,20 +89,24 @@ async function searchYoutubeWithoutKey(query) {
 }
 
 async function fetchYoutubeVideo(characterName, seriesName) {
-  // 1. Try to search YouTube keyless for character specific moments first!
+  // 1. Check curated list first for verified high-accuracy match
+  for (const key of Object.keys(CURATED_VIDEOS)) {
+    if (characterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(characterName.toLowerCase())) {
+      return CURATED_VIDEOS[key];
+    }
+  }
+
+  // 2. Try verified YouTube search where video title MUST contain the character name
   try {
-    console.log(`Searching YouTube keyless for character showcase: ${characterName} (${seriesName})`);
-    const query = `${characterName} ${seriesName} showcase moments compilation`;
-    const videoId = await searchYoutubeWithoutKey(query);
+    const videoId = await searchYoutubeWithoutKey(characterName, seriesName);
     if (videoId) {
-      console.log(`  Found character video ID: ${videoId}`);
       return videoId;
     }
   } catch (err) {
-    console.error(`Keyless YouTube search failed for ${characterName}:`, err.message);
+    console.error(`Verified YouTube search failed for ${characterName}:`, err.message);
   }
 
-  // 2. Fallback to API Key search if configured
+  // 3. Fallback to API Key search if configured
   const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
   if (YOUTUBE_API_KEY) {
     try {
@@ -83,13 +121,6 @@ async function fetchYoutubeVideo(characterName, seriesName) {
       }
     } catch (error) {
       console.error("YouTube API search failed:", error.message);
-    }
-  }
-
-  // 3. Fallback to curated list
-  for (const key of Object.keys(CURATED_VIDEOS)) {
-    if (characterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(characterName.toLowerCase())) {
-      return CURATED_VIDEOS[key];
     }
   }
 
