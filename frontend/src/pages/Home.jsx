@@ -129,23 +129,27 @@ export default function Home() {
               muted
               loop
               playsInline
-              className="absolute object-cover"
+              className="absolute object-cover pointer-events-none"
               style={{
-                width: "100%",
-                height: "100%",
-                transform: "rotate(270deg) scale(1.8)",
+                top: "50%",
+                left: "50%",
+                width: "140vmax",
+                height: "140vmax",
+                minWidth: "1600px",
+                minHeight: "1600px",
+                transform: "translate(-50%, -50%) rotate(270deg)",
                 transformOrigin: "center",
-                opacity: 0.6
+                opacity: 0.85
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#110d29]/65 via-[#0b0717]/80 to-[#0b0717]/60" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0717]/75 via-[#0b0717]/40 to-[#0b0717]/45" />
           </div>
 
           <div className="space-y-6 max-w-2xl text-center md:text-left z-10">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-100 leading-none tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-100 leading-none tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
               Discover Your Favorite <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-brand-cyan">Anime Characters</span>
             </h1>
-            <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-lg">
+            <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-lg drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
               Explore databases, character profiles, image galleries, and trending moments from the most popular anime of all time.
             </p>
             {/* Inline search */}

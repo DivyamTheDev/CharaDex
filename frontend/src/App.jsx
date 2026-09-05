@@ -6,35 +6,41 @@ import GenderTab from "./pages/GenderTab";
 import CharacterDetail from "./pages/CharacterDetail";
 
 export default function App() {
-  const [showIntro, setShowIntro] = useState(() => {
-    return !sessionStorage.getItem("charaDexIntroPlayed");
-  });
+  const [showIntro, setShowIntro] = useState(true);
   const [fadeIntro, setFadeIntro] = useState(false);
   const videoRef = React.useRef(null);
 
-  useEffect(() => {
-    if (showIntro) {
-      // Slow down playback rate to 50% speed (cinematic half speed)
-      if (videoRef.current) {
-        videoRef.current.playbackRate = 0.5;
-      }
+  const dismissIntro = () => {
+    setFadeIntro(true);
+    setTimeout(() => {
+      setShowIntro(false);
+    }, 700);
+  };
 
-      // Start fading out slightly before removing the overlay (3.5 seconds total, cutting exactly before 2s of video)
-      const fadeTimer = setTimeout(() => {
-        setFadeIntro(true);
-      }, 3000);
-
-      const removeTimer = setTimeout(() => {
-        setShowIntro(false);
-        sessionStorage.setItem("charaDexIntroPlayed", "true");
-      }, 3500);
-
-      return () => {
-        clearTimeout(fadeTimer);
-        clearTimeout(removeTimer);
-      };
+  const handleTimeUpdate = (e) => {
+    // Ensure the video plays smoothly until 2.8s of actual playback time
+    if (e.target.currentTime >= 2.8 && !fadeIntro) {
+      dismissIntro();
     }
-  }, [showIntro]);
+  };
+
+  const handleVideoLoaded = () => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 0.65;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    // Safety fallback timer (dismisses after 8s if video cannot load or autoplay is restricted)
+    const fallback = setTimeout(() => {
+      if (showIntro && !fadeIntro) {
+        dismissIntro();
+      }
+    }, 8000);
+
+    return () => clearTimeout(fallback);
+  }, [showIntro, fadeIntro]);
 
   return (
     <Router>
@@ -42,7 +48,7 @@ export default function App() {
         {/* Intro Opener Overlay */}
         {showIntro && (
           <div
-            className={`fixed inset-0 z-[9999] flex items-center justify-center bg-[#0b0717] transition-opacity duration-500 ease-out overflow-hidden ${
+            className={`fixed inset-0 z-[9999] flex items-center justify-center bg-[#0b0717] transition-opacity duration-700 ease-out overflow-hidden ${
               fadeIntro ? "opacity-0 pointer-events-none" : "opacity-100"
             }`}
           >
@@ -52,14 +58,28 @@ export default function App() {
               autoPlay
               muted
               playsInline
-              className="absolute object-cover"
+              onLoadedMetadata={handleVideoLoaded}
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={dismissIntro}
+              className="absolute object-cover pointer-events-none"
               style={{
-                width: "100vh",
-                height: "100vw",
-                transform: "rotate(270deg)",
+                top: "50%",
+                left: "50%",
+                width: "120vmax",
+                height: "120vmax",
+                minWidth: "100vw",
+                minHeight: "100vh",
+                transform: "translate(-50%, -50%) rotate(270deg)",
                 transformOrigin: "center"
               }}
             />
+            {/* Skip Option */}
+            <button
+              onClick={dismissIntro}
+              className="absolute bottom-6 right-6 z-10 px-4 py-2 bg-black/50 hover:bg-black/80 backdrop-blur-md border border-purple-500/30 text-xs font-bold text-slate-300 hover:text-white uppercase tracking-wider rounded-full transition cursor-pointer"
+            >
+              Skip Intro ✕
+            </button>
           </div>
         )}
 
