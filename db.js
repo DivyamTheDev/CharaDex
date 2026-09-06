@@ -53,7 +53,15 @@ function writeJSON(data) {
 }
 
 const db = {
-  connect: async (uri) => {
+  connect: async (rawUri) => {
+    let uri = rawUri;
+    if (uri) {
+      uri = uri.trim();
+      if (uri.startsWith("MONGO_URI=")) {
+        uri = uri.replace(/^MONGO_URI=\s*/, "").trim();
+      }
+      uri = uri.replace(/^["']|["']$/g, "");
+    }
     if (isMongoConnected && mongoose.connection.readyState === 1) {
       return;
     }

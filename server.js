@@ -440,25 +440,36 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/animeCharacters";
+function getCleanMongoUri() {
+  let uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/animeCharacters";
+  if (uri) {
+    uri = uri.trim();
+    if (uri.startsWith("MONGO_URI=")) {
+      uri = uri.replace(/^MONGO_URI=\s*/, "").trim();
+    }
+    uri = uri.replace(/^["']|["']$/g, "");
+  }
+  return uri;
+}
+const MONGO_URI = getCleanMongoUri();
 
 // Ensure DB is connected before processing requests on serverless
 app.use(async (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
     try {
-      await db.connect(MONGO_URI);
+      await db.connect(getCleanMongoUri());
     } catch (e) {}
   }
   next();
 });
 
 // Health check route
-app.get("/api/health", (req, res) => {
+app.get(["/api/health", "/health"], (req, res) => {
   res.json({ status: "ok", message: "Anime Character API is running." });
 });
 
 // GET /api/characters - supports query params: gender, category, search, page, limit
-app.get("/api/characters", async (req, res) => {
+app.get(["/api/characters", "/characters"], async (req, res) => {
   try {
     const { gender, category, search, page = 1, limit = 20 } = req.query;
     const filter = {};
@@ -534,7 +545,7 @@ app.get("/api/characters", async (req, res) => {
 });
 
 // GET /api/series - get all unique series names
-app.get("/api/series", async (req, res) => {
+app.get(["/api/series", "/series"], async (req, res) => {
   try {
     const series = await db.distinct("series");
     res.json(series.sort());
@@ -544,7 +555,7 @@ app.get("/api/series", async (req, res) => {
 });
 
 // GET /api/characters/:id - get character by ID (Mongoose ObjectID, AniList ID, or MAL ID)
-app.get("/api/characters/:id", async (req, res) => {
+app.get(["/api/characters/:id", "/characters/:id"], async (req, res) => {
   try {
     const { id } = req.params;
     let character;
