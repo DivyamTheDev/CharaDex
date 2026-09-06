@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Heart, Sparkles, Tv, Calendar } from "lucide-react";
+import { ArrowLeft, Heart, Sparkles, Tv, Calendar, ExternalLink } from "lucide-react";
 
 // Local SVG component for YouTube icon to prevent version/build conflicts
 const Youtube = (props) => (
@@ -22,7 +22,7 @@ const Youtube = (props) => (
   </svg>
 );
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 export default function CharacterDetail() {
   const { id } = useParams();
@@ -200,12 +200,25 @@ export default function CharacterDetail() {
           </div>
 
           {/* Video Section (YouTube Embed) */}
-          {character.videoId && (
-            <div className="space-y-3">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <h2 className="text-xl font-extrabold text-slate-100 flex items-center space-x-2">
                 <Youtube className="h-5 w-5 text-red-500 fill-red-500 filter drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
                 <span>Character Spotlight Video</span>
               </h2>
+              {character.videoId && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${character.videoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center space-x-1 transition"
+                >
+                  <span>Watch on YouTube</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
+            {character.videoId ? (
               <div className="aspect-video w-full rounded-2xl overflow-hidden border border-purple-500/20 shadow-2xl bg-slate-950 neon-glow-purple">
                 <iframe
                   src={`https://www.youtube.com/embed/${character.videoId}?autoplay=1&mute=0`}
@@ -216,8 +229,24 @@ export default function CharacterDetail() {
                   className="w-full h-full"
                 ></iframe>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="glass-panel p-6 rounded-2xl border border-purple-500/10 text-center space-y-3">
+                <p className="text-slate-400 text-sm">
+                  No verified embeddable spotlight video available for this character yet.
+                </p>
+                <a
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(character.name + " " + character.series)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-bold transition"
+                >
+                  <Youtube className="h-4 w-4" />
+                  <span>Search on YouTube</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            )}
+          </div>
 
           {/* Biography Section */}
           <div className="space-y-3">

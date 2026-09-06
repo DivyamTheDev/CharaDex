@@ -44,14 +44,37 @@ const CURATED_VIDEOS = {
   "Rei Ayanami": "1R8z_jTqk-E",
   "Marin Kitagawa": "R90ZYSgUSdI",
   "Rem": "UzGULFTBrKg",
-  "Chika Fujiwara": "R2vKdZCsJwY"
+  "Chika Fujiwara": "R2vKdZCsJwY",
+  "Rias Gremory": "W3XJs1lTjtw",
+  "Rias": "W3XJs1lTjtw",
+  "Akeno": "g0tHsJxYkOc",
+  "Akeno Himejima": "g0tHsJxYkOc"
 };
 
-const DEFAULT_VIDEO_ID = "S8_YwFLCh4U";
+function cleanSeriesTitle(series) {
+  if (!series) return "";
+  return series
+    .replace(/[:\-()[\]!]/g, " ")
+    .replace(/\b(Season|Part|TV|Movie|The Final|2nd|3rd|4th|1st)\b.*$/i, "")
+    .trim();
+}
+
+async function checkYoutubeEmbeddable(videoId) {
+  if (!videoId) return false;
+  try {
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    const res = await fetch(url);
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
 
 async function searchYoutubeWithoutKey(characterName, seriesName) {
   try {
-    const query = `${characterName} ${seriesName} moments`;
+    const cleanSeries = cleanSeriesTitle(seriesName);
+    const cleanChar = characterName.replace(/[:\-()[\]!]/g, " ").trim();
+    const query = `${cleanChar} ${cleanSeries} moments`;
     const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
     const response = await fetch(url, {
       headers: {
@@ -65,38 +88,116 @@ async function searchYoutubeWithoutKey(characterName, seriesName) {
 
     const data = JSON.parse(jsonMatch[1]);
     const sections = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
-    const charParts = characterName.toLowerCase().split(/\s+/).filter(p => p.length > 2);
+    const charParts = cleanChar.toLowerCase().split(/\s+/).filter(p => p.length > 2);
+    const seriesKeywords = cleanSeries.toLowerCase().split(/\s+/).filter(p => p.length > 2);
 
     for (const section of sections) {
       const items = section.itemSectionRenderer?.contents || [];
       for (const item of items) {
         const v = item.videoRenderer;
         if (!v || !v.videoId) continue;
+
+        // Skip YouTube Shorts (reel, #shorts, or shorts url)
+        const navUrl = v.navigationEndpoint?.commandMetadata?.webCommandMetadata?.url || "";
+        if (navUrl.includes("/shorts/")) continue;
+        const isShortsOverlay = v.thumbnailOverlays?.some(o => 
+          o.thumbnailOverlayTimeStatusRenderer?.style === "SHORTS" ||
+          o.thumbnailOverlayTimeStatusRenderer?.text?.simpleText?.toLowerCase()?.includes("shorts")
+        );
+        if (isShortsOverlay) continue;
+
         const title = (v.title?.runs?.map(r => r.text).join("") || v.title?.simpleText || "").toLowerCase();
-        
-        // Strict verification: title MUST mention the character
-        const matchesChar = charParts.some(part => title.includes(part));
-        if (matchesChar) {
-          console.log(`  Found verified character video: "${title}" (${v.videoId})`);
-          return v.videoId;
+        if (title.includes("#shorts") || title.includes("#short")) continue;
+
+        // Strict verification: Whole-word match on character name (e.g. \brias\b, not 'historias')
+        const matchesChar = charParts.some(part => {
+          const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          return new RegExp(`\\b${escaped}\\b`, "i").test(title);
+        });
+
+        // Also ensure either series matches OR character's full name is in title
+        const matchesSeries = seriesKeywords.length === 0 || seriesKeywords.some(k => {
+          const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          return new RegExp(`\\b${escaped}\\b`, "i").test(title);
+        });
+        const matchesFullName = cleanChar.length > 3 && title.includes(cleanChar.toLowerCase());
+
+        if (matchesChar && (matchesSeries || matchesFullName)) {
+          const isEmbeddable = await checkYoutubeEmbeddable(v.videoId);
+          if (isEmbeddable) {
+            console.log(`  [VERIFIED MOMENTS] "${title}" (${v.videoId})`);
+            return v.videoId;
+          }
         }
       }
     }
   } catch (error) {
-    console.error("Error scraping YouTube search:", error.message);
+    console.error("Error scraping YouTube moments search:", error.message);
   }
   return null;
 }
 
-async function fetchYoutubeVideo(characterName, seriesName) {
-  // 1. Check curated list first for verified high-accuracy match
-  for (const key of Object.keys(CURATED_VIDEOS)) {
-    if (characterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(characterName.toLowerCase())) {
-      return CURATED_VIDEOS[key];
+async function searchYoutubeSeriesTrailer(seriesName) {
+  try {
+    const cleanSeries = cleanSeriesTitle(seriesName);
+    if (!cleanSeries) return null;
+    const query = `${cleanSeries} anime official trailer`;
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+      }
+    });
+    if (!response.ok) return null;
+    const html = await response.text();
+    const jsonMatch = html.match(/ytInitialData\s*=\s*({.+?});<\/script>/);
+    if (!jsonMatch) return null;
+
+    const data = JSON.parse(jsonMatch[1]);
+    const sections = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+    const seriesKeywords = cleanSeries.toLowerCase().split(/\s+/).filter(p => p.length > 2);
+
+    for (const section of sections) {
+      const items = section.itemSectionRenderer?.contents || [];
+      for (const item of items) {
+        const v = item.videoRenderer;
+        if (!v || !v.videoId) continue;
+
+        const navUrl = v.navigationEndpoint?.commandMetadata?.webCommandMetadata?.url || "";
+        if (navUrl.includes("/shorts/")) continue;
+
+        const title = (v.title?.runs?.map(r => r.text).join("") || v.title?.simpleText || "").toLowerCase();
+        if (title.includes("#shorts")) continue;
+        
+        const matchesSeries = seriesKeywords.some(k => {
+          const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          return new RegExp(`\\b${escaped}\\b`, "i").test(title);
+        });
+        if (matchesSeries) {
+          const isEmbeddable = await checkYoutubeEmbeddable(v.videoId);
+          if (isEmbeddable) {
+            console.log(`  [VERIFIED SERIES TRAILER] "${title}" (${v.videoId})`);
+            return v.videoId;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function fetchYoutubeVideo(characterName, seriesName, anilistMediaNodes = null) {
+  const lowerName = characterName.toLowerCase();
+  
+  // 1. Check curated list with safe word-matching
+  for (const [key, id] of Object.entries(CURATED_VIDEOS)) {
+    const lowerKey = key.toLowerCase();
+    if (lowerName === lowerKey || lowerName.includes(lowerKey)) {
+      return id;
     }
   }
 
-  // 2. Try verified YouTube search where video title MUST contain the character name
+  // 2. Try verified character-specific moments on YouTube
   try {
     const videoId = await searchYoutubeWithoutKey(characterName, seriesName);
     if (videoId) {
@@ -106,32 +207,41 @@ async function fetchYoutubeVideo(characterName, seriesName) {
     console.error(`Verified YouTube search failed for ${characterName}:`, err.message);
   }
 
-  // 3. Fallback to API Key search if configured
-  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-  if (YOUTUBE_API_KEY) {
-    try {
-      const query = `${characterName} ${seriesName} moments compilation`;
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}&maxResults=1`;
-      const response = await fetch(url);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.items && result.items.length > 0) {
-          return result.items[0].id.videoId;
+  // 3. Check official AniList anime trailer from media nodes (guaranteed embeddable and matches the anime)
+  if (anilistMediaNodes && Array.isArray(anilistMediaNodes)) {
+    for (const node of anilistMediaNodes) {
+      if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
+        const isEmbeddable = await checkYoutubeEmbeddable(node.trailer.id);
+        if (isEmbeddable) {
+          console.log(`  [ANILIST MEDIA TRAILER] Using official trailer ${node.trailer.id} for ${characterName} (${seriesName})`);
+          return node.trailer.id;
         }
       }
-    } catch (error) {
-      console.error("YouTube API search failed:", error.message);
     }
   }
 
-  return DEFAULT_VIDEO_ID;
+  // 4. Fallback to searching the official trailer for THIS specific anime series (NOT One Piece!)
+  try {
+    const seriesTrailerId = await searchYoutubeSeriesTrailer(seriesName);
+    if (seriesTrailerId) {
+      return seriesTrailerId;
+    }
+  } catch (err) {}
+
+  // 5. Only if the character is genuinely from One Piece do we use the One Piece trailer
+  if (seriesName && seriesName.toLowerCase().includes("one piece")) {
+    return "S8_YwFLCh4U";
+  }
+
+  // If no verified video found, return null so we NEVER display an unrelated anime trailer!
+  return null;
 }
 
 async function fetchAndCacheFromAniList(searchQuery) {
   try {
     const query = `
       query ($search: String) {
-        Page (page: 1, perPage: 5) {
+        Page (page: 1, perPage: 6) {
           characters (search: $search) {
             id
             name {
@@ -158,6 +268,36 @@ async function fetchAndCacheFromAniList(searchQuery) {
               }
             }
           }
+          media (search: $search, type: ANIME, sort: POPULARITY_DESC) {
+            characters (sort: [ROLE, RELEVANCE, POPULARITY_DESC], perPage: 6) {
+              nodes {
+                id
+                name {
+                  full
+                  native
+                }
+                image {
+                  large
+                }
+                description
+                gender
+                favourites
+                media (type: ANIME, sort: POPULARITY_DESC) {
+                  nodes {
+                    title {
+                      english
+                      romaji
+                      userPreferred
+                    }
+                    trailer {
+                      id
+                      site
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     `;
@@ -176,10 +316,30 @@ async function fetchAndCacheFromAniList(searchQuery) {
     if (!response.ok) return;
 
     const result = await response.json();
-    const characters = result.data?.Page?.characters;
-    if (!characters || characters.length === 0) return;
+    const pageData = result.data?.Page;
+    const directCharacters = pageData?.characters || [];
+    const mediaCharacters = [];
+    if (pageData?.media) {
+      for (const m of pageData.media) {
+        if (m.characters?.nodes) {
+          mediaCharacters.push(...m.characters.nodes);
+        }
+      }
+    }
 
-    for (const char of characters) {
+    // Combine and deduplicate
+    const allChars = [...directCharacters];
+    const seenIds = new Set(directCharacters.map(c => String(c.id)));
+    for (const mc of mediaCharacters) {
+      if (!seenIds.has(String(mc.id))) {
+        seenIds.add(String(mc.id));
+        allChars.push(mc);
+      }
+    }
+
+    if (allChars.length === 0) return;
+
+    for (const char of allChars) {
       const name = char.name.full;
       const series = char.media?.nodes?.[0]?.title?.english || 
                      char.media?.nodes?.[0]?.title?.userPreferred || 
@@ -194,31 +354,15 @@ async function fetchAndCacheFromAniList(searchQuery) {
         }
       }
 
-      // Resolve YouTube Video ID (prefer character showcase compilation, fallback to AniList trailer)
-      let videoId = await fetchYoutubeVideo(name, series);
-
-      if (!videoId || videoId === DEFAULT_VIDEO_ID) {
-        console.log(`- Character moments failed/defaulted, looking up AniList trailer for ${name}...`);
-        if (char.media && char.media.nodes) {
-          for (const node of char.media.nodes) {
-            if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
-              videoId = node.trailer.id;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!videoId) {
-        videoId = DEFAULT_VIDEO_ID;
-      }
+      // Resolve YouTube Video ID (prefer character moments, fallback to AniList trailer or series trailer)
+      const videoId = await fetchYoutubeVideo(name, series, char.media?.nodes);
 
       const characterData = {
         name,
         series,
         gender,
         images: char.image?.large ? [char.image.large] : [],
-        videoId,
+        videoId: videoId || null,
         bio: char.description || "",
         popularity: char.favourites || 0,
         isTopCharacter: false,
@@ -274,7 +418,10 @@ async function fetchAniListTrailer(anilistId) {
       if (nodes) {
         for (const node of nodes) {
           if (node.trailer && node.trailer.site === "youtube" && node.trailer.id) {
-            return node.trailer.id;
+            const isEmbeddable = await checkYoutubeEmbeddable(node.trailer.id);
+            if (isEmbeddable) {
+              return node.trailer.id;
+            }
           }
         }
       }
@@ -314,7 +461,9 @@ app.get("/api/characters", async (req, res) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, "i");
+      const cleanSearch = search.trim();
+      const escaped = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(escaped, "i");
       filter.$or = [
         { name: searchRegex },
         { series: searchRegex }
@@ -341,6 +490,16 @@ app.get("/api/characters", async (req, res) => {
         skip,
         limit: limitNum
       });
+
+      // If still 0 and gender/category filter was restricting it, search globally
+      if (characters.length === 0 && (filter.gender || filter.isTopCharacter || filter.isFanFavorite)) {
+        const relaxedFilter = { $or: filter.$or };
+        characters = await db.find(relaxedFilter, {
+          sort: { popularity: -1 },
+          skip,
+          limit: limitNum
+        });
+      }
     }
 
     const total = await db.countDocuments(filter);
@@ -395,22 +554,31 @@ app.get("/api/characters/:id", async (req, res) => {
     }
 
     // Auto-repair missing or incorrect legacy default videoId for cached records
-    if (!character.videoId || character.videoId === "S8_YwFLCh4U") {
+    const isOnePiece = character.series && character.series.toLowerCase().includes("one piece");
+    if (!character.videoId || (character.videoId === "S8_YwFLCh4U" && !isOnePiece)) {
       console.log(`Auto-repairing missing/default videoId for: ${character.name}`);
       
       let videoId = await fetchYoutubeVideo(character.name, character.series);
       
-      if (!videoId || videoId === "S8_YwFLCh4U") {
-        console.log(`- Character moments search failed/defaulted, checking AniList trailer for ${character.name}`);
-        const aniListTrailer = await fetchAniListTrailer(character.sources.anilistId);
+      if (!videoId) {
+        console.log(`- Character moments search failed, checking AniList trailer for ${character.name}`);
+        const aniListTrailer = await fetchAniListTrailer(character.sources?.anilistId);
         if (aniListTrailer) {
           videoId = aniListTrailer;
         }
       }
 
+      if (!videoId) {
+        videoId = await searchYoutubeSeriesTrailer(character.series);
+      }
+
+      if (!videoId && isOnePiece) {
+        videoId = "S8_YwFLCh4U";
+      }
+
       const updated = await db.findOneAndUpdate(
-        { "sources.anilistId": character.sources.anilistId },
-        { videoId: videoId || "S8_YwFLCh4U" },
+        { _id: character._id },
+        { videoId: videoId || null },
         { new: true }
       );
       if (updated) {
