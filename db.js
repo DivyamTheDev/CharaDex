@@ -1,26 +1,36 @@
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const dns = require("dns");
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-// Bypasses local network DNS block of MongoDB SRV records by using public DNS servers
-try {
-  dns.setServers(["8.8.8.8", "1.1.1.1"]);
-} catch (err) {
-  console.warn("Could not set public DNS resolvers, using default:", err.message);
+// Bypasses local network DNS block of MongoDB SRV records on local development
+if (!process.env.VERCEL) {
+  try {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  } catch (err) {
+    console.warn("Could not set public DNS resolvers, using default:", err.message);
+  }
 }
 
 const CharacterModel = require("./Character");
 
-const DB_FILE = path.join(__dirname, "db.json");
+// In serverless environments (e.g. Vercel), /var/task is read-only.
+// Use os.tmpdir() for local fallback file.
+const DB_FILE = process.env.VERCEL ? path.join(os.tmpdir(), "db.json") : path.join(__dirname, "db.json");
 
 let isMongoConnected = false;
+let connectionPromise = null;
 
-// Initialize db.json with an empty array if it doesn't exist
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
+// Initialize db.json safely with an empty array if it doesn't exist
+try {
+  if (!fs.existsSync(DB_FILE)) {
+    fs.writeFileSync(DB_FILE, JSON.stringify([], null, 2));
+  }
+} catch (e) {
+  // Read-only filesystem, ignore safely
 }
 
 function readJSON() {
@@ -30,7 +40,6 @@ function readJSON() {
     }
     return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
   } catch (e) {
-    console.error("Error reading db.json, resetting to empty array.", e.message);
     return [];
   }
 }
@@ -39,22 +48,36 @@ function writeJSON(data) {
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
   } catch (e) {
-    console.error("Error writing to db.json", e.message);
+    // Ignore write failures on read-only environments
   }
 }
 
 const db = {
   connect: async (uri) => {
-    try {
-      console.log(`Connecting to database at ${uri}...`);
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
-      isMongoConnected = true;
-      console.log("Connected to MongoDB successfully!");
-    } catch (err) {
-      isMongoConnected = false;
-      console.warn(`\n⚠️  MongoDB connection failed: ${err.message}`);
-      console.warn("   Falling back to local JSON database (db.json).\n");
+    if (isMongoConnected && mongoose.connection.readyState === 1) {
+      return;
     }
+    if (connectionPromise) {
+      return connectionPromise;
+    }
+    connectionPromise = (async () => {
+      try {
+        const maskedUri = uri ? uri.replace(/\/\/[^:]+:[^@]+@/, "//***:***@") : "undefined";
+        console.log(`Connecting to database at ${maskedUri}...`);
+        await mongoose.connect(uri, {
+          serverSelectionTimeoutMS: 15000,
+          bufferCommands: false
+        });
+        isMongoConnected = true;
+        console.log("Connected to MongoDB successfully!");
+      } catch (err) {
+        connectionPromise = null;
+        isMongoConnected = false;
+        console.warn(`\n⚠️  MongoDB connection failed: ${err.message}`);
+        console.warn("   Falling back to local JSON database.\n");
+      }
+    })();
+    return connectionPromise;
   },
 
   disconnect: async () => {
